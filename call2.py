@@ -9,7 +9,7 @@ for k in range(1, 10):
 
 	if len(stri) < 100000:
 		par = (('page', k), ('per_page', 100))
-		response = requests.get('https://api.github.com/repos/kamranahmedse/developer-roadmap/issues/comments', auth = ('satvikshukla', '&azgithub19'), params = par)
+		response = requests.get('https://api.github.com/repos/kamranahmedse/developer-roadmap/issues/comments', auth = ('username', 'password'), params = par)
 
 		# for i in response(1,10):
 		# 	pass
