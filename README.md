@@ -7,4 +7,5 @@ Let us have coders be better leaders.
 
 #### Instructions:
 Install watson developer cloud and bokeh by using `pip install watson_developer_cloud` and `pip install bokeh`
+
 Run call3.py after editing the username and password fields inside it to your own username and password.
