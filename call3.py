@@ -26,6 +26,7 @@ def gitStat(owner, repo):
 
 		if len(stri) < 60000:
 			par = (('page', k), ('per_page', 100))
+
 			# put github username and password in auth param below
 			response = requests.get(temp_str, auth = ('username', 'password'), params = par)
 

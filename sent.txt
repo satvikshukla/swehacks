@@ -1,6 +1,1332 @@
-I think you are seeing this issue:
+Main things this involves: `print -> print()`, handle `__floordiv__` / `__truediv__` / `__div__` correctly.
+:+1:  to this issue
+This should be fixed by https://github.com/tensorflow/tensorflow/commit/430a054d6134f00e5188906bc4080fb7c5035ad5 .
+We definitely depend on protobuf 3.0 (it's what we use as a git submodule). 
 
-https://stackoverflow.com/questions/19319963/how-to-avoid-seams-between-filled-areas-in-canvas
+To help us debug, can you please try following the instructions to install within a virtualenv here: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/g3doc/get_started/os_setup.md#virtualenv-based-installation- ?
+Got it running by uninstalling the distribution-owned numpy package (?) and reinstalling it from pip. Guess they were interfering in some weird way. Thanks for your help!
+:+1:
+ Since raw performance is one of the goals of this library I think that pure implementations don't make too much sense.
+A prettier API on top of the generated interfaces would be nice though.
+Although we may not pursue this ourselves, the internal formats used for communication (`GraphDef`, etc.) are all platform independent protobuf.  Thus, it is possible to implement all or part of the tensorflow API in Java while preserving communication compatibility with the existing code.  Since a Java version would likely be slower, one useful bit would be a pure inference layer that evaluates graphs but isn't necessarily able to build them; this would allow graphs built in Python and trained in Python / C++ on GPUs to be run from Java servers.
+Is there a canonical / repeatable test suite, so language bindings can have a target and level of confidence? Is there a build server? Could there be a build server? 
+There's a testsuite with fairly good converge, but currently it's mostly Python with a few C++ tests.  There's also a lot of functionality for building graphs that's currently Python only, in particular the automatic differentiation functionality, though that doesn't matter for evaluation of graphs in Java.  There are plans to move this functionality into the underlying C++ in future, at which point Java SWIG bindings would be more useful for creating graphs.
 
-Antialiasing leads to this effect where the background sneaks through a gap between the polygons. I guess you're right, thanks for the comment @alexprand.
-As a minor possible improvement of your "newOptions" version, maybe putting the sliders on two columns (quantitative on one side, categorical on the other) would make the interface more compact and homogeneous. But this new version is great!I just added another commit with another option "Dots" that will create stippled images by drawing non-overlapping circles at the Voronoi sites. Yea, I've noticed this -- it's one the list (thanks for opening an issue). I'll take this one. Close a249bbdfef300239c8a65c270549ae547bc29708I am going to close this and put up a new pull request once the react branch merges (and I get a chance to update this code to that structure).
+If someone takes up the Java SWIG challenge, we'd be happy to accept it upstream pending review, etc., at which point it would be part of our continuous testing.  The details of accepting contributions is in flux at the moment, but that will stabilize.
+:+1:
+Nice!
++1
+You should look at the RNN tutorial: http://tensorflow.org/tutorials/recurrent/index.md .
+Moving this comment here from https://github.com/tensorflow/tensorflow/issues/3:
+
+---
+
+There's a testsuite with fairly good converge, but currently it's mostly Python with a few C++ tests. There's also a lot of functionality for building graphs that's currently Python only, in particular the automatic differentiation functionality, though that doesn't matter for evaluation of graphs in Java. There are plans to move this functionality into the underlying C++ in future, at which point Java SWIG bindings would be more useful for creating graphs.
+
+If someone takes up the Java SWIG challenge, we'd be happy to accept it upstream pending review, etc., at which point it would be part of our continuous testing. The details of accepting contributions is in flux at the moment, but that will stabilize.
+Okay, I was able to reproduce this in virtualenv by installing protobuf==2.6.1
+
+The short answer is that we depend on protobuf 3.0.0, and having the protobuf pip library installed seems to interfere with ours.
+
+Two solutions:
+
+1) pip install protobuf=3.0.0a1 or higher, then pip install tensorflow
+2) pip uninstall protobuf first, and then install tensorflow again -- it should bring in the dependency
+
+I was able to do both in virtualenv and they worked -- let me know if either suffices for you.  We might add protobuf >= 3 to our whl dependencies if so.
+We are working on support for operators and kernels that take quantized (fixed-point) data -- we're still working on the right APIs to expose them, and with that we'll have more documentation on why and how they are used.  Stay tuned!
+:+1: 
+We're working on it.
+Could you try the docker-based installation for now? It should have the correct gcc version. 
+
+http://tensorflow.org/get_started/os_setup.md#docker-based_installation
+
+It is possible to modify the lower-level scripts to use a different gcc. But you will need to modify a few places in the source code to make that happen. 
+I think its a great suggestion!
+Providing APIs for every 'very popular' lang would probably bloat the main project quite quickly.
+Awesome, this is great work :open_mouth:  
+Please give my sincere thanks to :santa:
+Providing APIs for every 'very popular' lang would probably bloat the main project quite quickly.
+I understand the sentiment, but Swift, C# and Java are not "every" language, and this is not "every project" either. This is open source and Github so there might be enough hands to man the maintanance of ports to the most popular languages for such an important piece of software. Python is quite popular in academia but a little less popular with the bulk of private sector developers.
+@nivwusquorum haha that's a terrible workaround, as it'll start issues with other libraries. Thanks a lot though. I'm installing CUDA 7.0
+@nivwusquorum no.
+
+I'm running into the same issue. Looks like I'll be downgrading then.
+Tensorflow does not bring dependency on protobuf:
+
+``` sh
+gp@MacBook-Pro-Gregory ~> pip list
+mercurial (3.5.2)
+pip (7.1.2)
+setuptools (18.5)
+vboxapi (1.0)
+wheel (0.26.0)
+
+gp@MacBook-Pro-Gregory ~> pip install --no-cache-dir https://storage.googleapis.com/tensorflow/mac/tensorflow-0.5.0-py2-none-any.whl
+Collecting tensorflow==0.5.0 from https://storage.googleapis.com/tensorflow/mac/tensorflow-0.5.0-py2-none-any.whl
+  Downloading https://storage.googleapis.com/tensorflow/mac/tensorflow-0.5.0-py2-none-any.whl (9.8MB)
+    100% |████████████████████████████████| 9.8MB 13.7MB/s
+Collecting six>=1.10.0 (from tensorflow==0.5.0)
+  Downloading six-1.10.0-py2.py3-none-any.whl
+Collecting numpy>=1.9.2 (from tensorflow==0.5.0)
+  Downloading numpy-1.10.1-cp27-none-macosx_10_6_intel.macosx_10_9_intel.macosx_10_9_x86_64.macosx_10_10_intel.macosx_10_10_x86_64.whl (3.7MB)
+    100% |████████████████████████████████| 3.7MB 9.5MB/s
+Installing collected packages: six, numpy, tensorflow
+Successfully installed numpy-1.10.1 six-1.10.0 tensorflow-0.5.0
+
+gp@MacBook-Pro-Gregory ~> pip list
+mercurial (3.5.2)
+numpy (1.10.1)
+pip (7.1.2)
+setuptools (18.5)
+six (1.10.0)
+tensorflow (0.5.0)
+vboxapi (1.0)
+wheel (0.26.0)
+```
+
+Installing protobuf3 before does not help, either:
+
+``` sh
+gp@MacBook-Pro-Gregory ~> pip list
+mercurial (3.5.2)
+pip (7.1.2)
+setuptools (18.5)
+vboxapi (1.0)
+wheel (0.26.0)
+
+gp@MacBook-Pro-Gregory ~> pip install protobuf==3.0.0a1
+Collecting protobuf==3.0.0a1
+Requirement already satisfied (use --upgrade to upgrade): setuptools in /usr/local/lib/python2.7/site-packages (from protobuf==3.0.0a1)
+Installing collected packages: protobuf
+Successfully installed protobuf-3.0.0a1
+
+gp@MacBook-Pro-Gregory ~> pip install --no-cache-dir https://storage.googleapis.com/tensorflow/mac/tensorflow-0.5.0-py2-none-any.whl
+Collecting tensorflow==0.5.0 from https://storage.googleapis.com/tensorflow/mac/tensorflow-0.5.0-py2-none-any.whl
+  Downloading https://storage.googleapis.com/tensorflow/mac/tensorflow-0.5.0-py2-none-any.whl (9.8MB)
+    100% |████████████████████████████████| 9.8MB 65.8MB/s
+Collecting six>=1.10.0 (from tensorflow==0.5.0)
+  Downloading six-1.10.0-py2.py3-none-any.whl
+Collecting numpy>=1.9.2 (from tensorflow==0.5.0)
+  Downloading numpy-1.10.1-cp27-none-macosx_10_6_intel.macosx_10_9_intel.macosx_10_9_x86_64.macosx_10_10_intel.macosx_10_10_x86_64.whl (3.7MB)
+    100% |████████████████████████████████| 3.7MB 3.4MB/s
+Installing collected packages: six, numpy, tensorflow
+Successfully installed numpy-1.10.1 six-1.10.0 tensorflow-0.5.0
+
+gp@MacBook-Pro-Gregory ~> python
+Python 2.7.10 (default, Nov  9 2015, 20:28:23)
+[GCC 4.2.1 Compatible Apple LLVM 7.0.0 (clang-700.1.76)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import tensorflow as tf
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/usr/local/lib/python2.7/site-packages/tensorflow/__init__.py", line 4, in <module>
+    from tensorflow.python import *
+  File "/usr/local/lib/python2.7/site-packages/tensorflow/python/__init__.py", line 13, in <module>
+    from tensorflow.core.framework.graph_pb2 import *
+  File "/usr/local/lib/python2.7/site-packages/tensorflow/core/framework/graph_pb2.py", line 16, in <module>
+    from tensorflow.core.framework import attr_value_pb2 as tensorflow_dot_core_dot_framework_dot_attr__value__pb2
+  File "/usr/local/lib/python2.7/site-packages/tensorflow/core/framework/attr_value_pb2.py", line 16, in <module>
+    from tensorflow.core.framework import tensor_pb2 as tensorflow_dot_core_dot_framework_dot_tensor__pb2
+  File "/usr/local/lib/python2.7/site-packages/tensorflow/core/framework/tensor_pb2.py", line 16, in <module>
+    from tensorflow.core.framework import tensor_shape_pb2 as tensorflow_dot_core_dot_framework_dot_tensor__shape__pb2
+  File "/usr/local/lib/python2.7/site-packages/tensorflow/core/framework/tensor_shape_pb2.py", line 22, in <module>
+    serialized_pb=_b('\n,tensorflow/core/framework/tensor_shape.proto\x12\ntensorflow\"d\n\x10TensorShapeProto\x12-\n\x03\x64im\x18\x02 \x03(\x0b\x32 .tensorflow.TensorShapeProto.Dim\x1a!\n\x03\x44im\x12\x0c\n\x04size\x18\x01 \x01(\x03\x12\x0c\n\x04name\x18\x02 \x01(\tb\x06proto3')
+TypeError: __init__() got an unexpected keyword argument 'syntax'
+```
+
+Unless I am missing something, neither of the solutions work for me. Latest OS X, python2 + python3 installed from Homebrew.
+I think that's the point - Google hasn't open sourced "scalable" version :) 
+hey @sibleyd -- yes, that Dockerfile was still undergoing a little churn. An updated version will come along shortly, and I'll update this issue as soon as it's ready.
+
+The image is already up: b.gcr.io/tensorflow/tensorflow-full-gpu ... you'll need to follow [these instructions](http://tensorflow.org/get_started/os_setup.md#install_cuda) to pick up the CUDA libraries. The Dockerfile will assume those files are available locally (which is the missing `cuda/` path you spotted).
+(Thanks, I have seen the tutorial but it is not a substitute for an API; I filed the issue after consulting with a friend at Google Brain)
+Ah, great description of the problem [here](http://effbot.org/pyfaq/when-importing-module-x-why-do-i-get-undefined-symbol-pyunicodeucs2.htm).
+In case you have any trouble with the docker flow, this is the place you can modify to use a different compiler with Cuda, although we don't currently have a more user-friendly way of doing that.
+
+https://github.com/tensorflow/tensorflow/blob/master/third_party/gpus/crosstool/clang/bin/crosstool_wrapper_driver_is_not_gcc
+
+CPU_COMPILER = ('/usr/bin/gcc')
+NVCC_PATH = CURRENT_DIR + '/../../../cuda/bin/nvcc'
+GCC_HOST_COMPILER_PATH = ('/usr/bin/gcc')
+LLVM_HOST_COMPILER_PATH = ('/usr/bin/gcc')
+It's strange that Google ditched open OpenCL for proprietary CUDA.
+![im-just-saying](https://cloud.githubusercontent.com/assets/1548848/11042379/c2cf01c6-873c-11e5-8216-a00474c8e717.jpg)
+For now, you can build your own pip package via instructions [here](http://tensorflow.org/get_started/os_setup.md); see "Create the pip package and install".  Let us know if that doesn't work.
+At the very least, the [Eigen](http://eigen.tuxfamily.org) library would have to support OpenCL.
+This fixed the problem for me:
+
+```
+pip uninstall protobuf
+pip uninstall tensorflow
+brew uninstall protobuf
+pip install https://storage.googleapis.com/tensorflow/mac/tensorflow-0.5.0-py2-none-any.whl
+```
+flyingmutant: to appease my curiosity, can you let us know what you get when you do the following in python:
+
+``` python
+import google.protobuf
+>>> print google.protobuf.__version__
+3.0.0a4
+```
+
+(it's possible google.protobuf.__version__ doesn't exist either in one of the environments I've tested).
+
+Basically the symptom of the problem is that python is finding the older version of the protobuf library that doesn't support the generated python proto3 we require.
+Out of curiosity, have you set your LD_LIBRARY_PATH to your cuda installation's lib64 directory?
+Hi Avanti -- internally we've been working on iterating the API for RNNs, and we were happy enough with the current API to use it in the tutorial, but we're making sure it's solid before promoting it to the public API, since we'd then have to support it indefinitely.  (Anything not in the public API is a work-in-progress :)
+
+We'll keep this bug open in the meantime, and for now you can look at the source code documentation if you're interested in playing around: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/models/rnn/rnn.py#L9
+This release does not support distributed computation.
+@ebrevdo yes
+
+```
+printenv LD_LIBRARY_PATH
+/usr/local/cuda-7.5/lib64
+```
+Hi kmatzen: As mentioned in our FAQ, this release does not have an RPC and distributed implementation available yet: http://tensorflow.org/resources/faq.md#running_a_tensorflow_computation, but we are working on it and hope to make it available when it's ready.
+
+As a short-term proxy, you can see the Cifar tutorial for an example of how training and distributing among multiple GPUs works -- http://tensorflow.org/tutorials/deep_cnn/index.md
+Thanks for the question!  To reiterate what I said [here](https://github.com/tensorflow/tensorflow/issues/12#issuecomment-155150681), we are working on making a distributed implementation available, it's currently not in the initial release.  Please stay tuned, and take a look at the cifar multi-gpu tutorial for a flavor of how we handle multiple 'devices': http://tensorflow.org/tutorials/deep_cnn/index.md
+Ah, got it, thanks for the explanation.
+On the subject of CUDA library versions ...  CUDA 7.0 works for me (as expected), but it really insists on cuDNN 6.5 (which Nvidia now has as 'legacy').  
+
+Exact same library locations, etc, but downgrading from cuDNN 7.0 to 6.5 worked.
+As a timesaver, I wrote up the process in a [blog post](http://blog.mdda.net/ai/2015/11/10/contributing-to-tensorflow/) (mostly because compared to GitHub, the process is poor).
+Apparently the fix has already been put into their pipeline.
+Found the same issue on my end.
+
+```
+pip install https://storage.googleapis.com/tensorflow/mac/tensorflow-0.5.0-py2-none-any.whl
+Collecting tensorflow==0.5.0 from https://storage.googleapis.com/tensorflow/mac/tensorflow-0.5.0-py2-none-any.whl
+  Using cached https://storage.googleapis.com/tensorflow/mac/tensorflow-0.5.0-py2-none-any.whl
+Collecting six>=1.10.0 (from tensorflow==0.5.0)
+  Using cached six-1.10.0-py2.py3-none-any.whl
+Collecting numpy>=1.9.2 (from tensorflow==0.5.0)
+  Using cached numpy-1.10.1-cp27-none-macosx_10_6_intel.macosx_10_9_intel.macosx_10_9_x86_64.macosx_10_10_intel.macosx_10_10_x86_64.whl
+Installing collected packages: six, numpy, tensorflow
+  Found existing installation: six 1.4.1
+    DEPRECATION: Uninstalling a distutils installed project (six) has been deprecated and will be removed in a future version. This is due to the fact that uninstalling a distutils project will only partially uninstall the project.
+    Uninstalling six-1.4.1:
+Exception:
+Traceback (most recent call last):
+  File "/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/basecommand.py", line 211, in main
+    status = self.run(options, args)
+  File "/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/commands/install.py", line 311, in run
+    root=options.root_path,
+  File "/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/req/req_set.py", line 640, in install
+    requirement.uninstall(auto_confirm=True)
+  File "/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/req/req_install.py", line 716, in uninstall
+    paths_to_remove.remove(auto_confirm)
+  File "/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/req/req_uninstall.py", line 125, in remove
+    renames(path, new_path)
+  File "/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/utils/__init__.py", line 315, in renames
+    shutil.move(old, new)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/shutil.py", line 302, in move
+    copy2(src, real_dst)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/shutil.py", line 131, in copy2
+    copystat(src, dst)
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/shutil.py", line 103, in copystat
+    os.chflags(dst, st.st_flags)
+OSError: [Errno 1] Operation not permitted: '/var/folders/_f/95xpdnrx4yncxz91dt53mvfh0000gn/T/pip-ZXxpkX-uninstall/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/six-1.4.1-py2.7.egg-info'
+```
+
+This issue (https://github.com/pypa/pip/issues/3165) has more insight into the same. And according to this its the issue with `six` library being preinstalled in El Captain systems.
+
+Moreover there seems to be no solution as of now except installing python locally using brew rather than using pre-installed package by Apple.
+I just pushed the fix in https://github.com/tensorflow/tensorflow/commit/db0b5da485e1d1f23003ee08ed2e191451ee0319
+
+Thanks!
+@vrv I've got `AttributeError: 'module' object has no attribute '__version__'` for both 3.0.0a1 and 3.0.0a3 (which is the latest you can install with pip).
+
+I've found what fixes the issue for me:
+
+``` sh
+$ brew uninstall protobuf
+$ pip uninstall protobuf
+$ pip install 'protobuf>=3.0.0a3'
+$ pip install https://storage.googleapis.com/tensorflow/mac/tensorflow-0.5.0-py2-none-any.whl
+```
+
+It appears that Homebrew's protobuf package was causing the issues. Removing it, then installing protobuf3 with pip does the trick.
+For the protobuf issue above on OS X, not only should you `pip uninstall protobuf` to get rid of protobuf 2.x, but make sure you `brew uninstall protobuf` if you are using homebrew.
+
+@VikramTiwari : that is a different issue, already addressed in the "common problems" section of the 'Get Started' page
+Community may contribute ports to the project. No need to say here if there is real need of the ports. Actually I think Google may do Go API first.
+@dvj Yup! Got it just now. Instructions by @flyingmutant did the trick.
+Hi delip, we fixed this in https://github.com/tensorflow/tensorflow/commit/430a054d6134f00e5188906bc4080fb7c5035ad5 -- when we mint our next version of the pip binaries, this should be fixed.   Thanks for your report!
+Thanks!  We'll use this bug to track the improvements to the contribution process, which we are working on improving.
+Officially, Cuda compute capability 3.5 and 5.2 are supported. You can try to enable other compute capability by modifying the build script: 
+
+https://github.com/tensorflow/tensorflow/blob/master/third_party/gpus/crosstool/clang/bin/crosstool_wrapper_driver_is_not_gcc#L236
+Thanks! Will try it and report here.
+Thanks for the feedback -- this is tracked in https://github.com/tensorflow/tensorflow/issues/22
+Given that TensorFlow is designed to also run on mobile and that Apple is recommending [Swift](https://developer.apple.com/swift/) as a primary language for iOS development, I think having a Swift API for TensorFlow would be a good idea.
+
+I don't think adding support for the most widely-used languages such as Java, C#, and Swift would be a bad idea. The [gRPC](http://www.grpc.io/) project already supports 10 languages, including Java, C#, and JavaScript (via Node.js).
+
+@jamesliu96 Feel free to open an issue for adding a Go API.
+Thanks!  De-duping with https://github.com/tensorflow/tensorflow/issues/25
+@davidzchen sure :smiley: 
+Thanks for the help debugging everyone!  We'll try to update our 'common problems' section soon to include these suggestions.
+Hey, thanks! De-duping https://github.com/tensorflow/tensorflow/issues/10 for concentrating discussion about the Go API, so we can coordinate effort on it if needed.
+(De-duping with https://github.com/tensorflow/tensorflow/issues/23)
+:+1: 
+We have no plans to maintain an official one so far.
+Same, I was kind of disappointed to see no mention of Windows in the download and install page.
+We should open one!
+yes its within the tensorflow code, so just some simple python hacking wont solve it :)
+(_pywrap_tensorflow.so when you pip install the binary):
+
+```
+_mod = imp.load_module('_pywrap_tensorflow', fp, pathname, description)
+ImportError: libcudart.so.7.0: cannot open shared object file: No such file or directory
+```
+Sorry about that Alex, we'll update the docs. We are actively working on iOS support, though I can't give a timeline I'm afraid.
+You can find one pre-trained network as part of the Android example, at https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/android/assets/tensorflow_inception_graph.pb
+This implements a version of the Inception architecture for Imagenet classification.
+https://tensorflowtalk.slack.com
+
+How about here :)
+
+@eleijonmarck @halilakin
+:thumbsup:
+The same thing on Ubuntu 14.04. Maybe too much requests.
+Since it's not open for the public, I think it should either be an official engagement from the maintainers. Or another "official" slack-channel for unofficials (aspiring TensorFlowers)
+
+but i will try to connect their! thanks @sdgandhi.
+Yeah, looks like it's going to have to be unofficial if they don't have plans to maintain one. I'm setting up an auto invite server for the channel so it's easier to join. It'll be up in a few minutes, I'll post here.
+Okay, just sign up here to join the Slack channel: https://tensor-flow-talk-invite.herokuapp.com
+By the way, if you would like to use homebrew, you can install protobuf 3 via:
+
+brew install --devel protobuf
+
+For more details please refer to https://github.com/grpc/grpc-common/issues/162
+@eleijonmarck ^
+I was able to solve this by doing `brew reinstall --devel protobuf`, which installs `3.0.0a1`. Feel free to close the issue whenever you update the docs.
+I'd really like to see a C#/.net wrapper. Shouldn't be too hard to p/invoke into the C++ API.
+Wow! Thanks @sdgandhi . Il close this for now @vincentvanhoucke 
+For this to work, you'll have to install the PIP package. You can either download the pre-built package, or build from source by following the instructions here: http://tensorflow.org/get_started/os_setup.md#create-pip
+A few questions:
+- How did you install TensorFlow?
+- What directory are you running that command in?
+- What happens if you open a python interpreter and type `import tensorflow as tf`?
+Hi there! We've only released binaries for (and tested TensorFlow with) 64-bit platforms so far. You might have more luck building from sources: http://tensorflow.org/get_started/os_setup.md#installing_from_sources
+Can also confirm that pulling the docker image doesn't seem to work in Ubuntu 14.04. 
+Is b.gcr.io actually set up to have public docker images?
+
+I thought the point of the Google cloud registry was to have private / authentication required images.
+
+https://cloud.google.com/container-registry/
+"Google Container Registry provides secure, private Docker image storage on Google Cloud Platform."
+Anyone have an idea of what the major incompatibilities/accommodations are? Is it it mostly issues with file paths, etc? 
+
+It's built with Bazel, which only supports linux/mac, but the good news is that windows support for bazel seems will be out by the [end of this year.](https://github.com/bazelbuild/bazel/issues/276)
+@mrry   Thank you. When I run 
+bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
+
+Mon Nov 9 15:34:49 EST 2015 : === Using tmpdir: /tmp/tmp.itHpiLkuJI
+/tmp/tmp.itHpiLkuJI ~/packages/tensorflow
+Mon Nov 9 15:34:49 EST 2015 : === Building wheel
+Traceback (most recent call last):
+  File "setup.py", line 77, in <module>
+    keywords='tensorflow tensor machine learning',
+  File "/usr/lib/python2.7/distutils/core.py", line 151, in setup
+    dist.run_commands()
+  File "/usr/lib/python2.7/distutils/dist.py", line 953, in run_commands
+    self.run_command(cmd)
+  File "/usr/lib/python2.7/distutils/dist.py", line 972, in run_command
+    cmd_obj.run()
+  File "build/bdist.linux-x86_64/egg/setuptools/command/sdist.py", line 48, in run
+  File "/usr/lib/python2.7/distutils/cmd.py", line 326, in run_command
+    self.distribution.run_command(command)
+  File "/usr/lib/python2.7/distutils/dist.py", line 970, in run_command
+    cmd_obj = self.get_command_obj(command)
+  File "/usr/lib/python2.7/distutils/dist.py", line 845, in get_command_obj
+    klass = self.get_command_class(command)
+  File "build/bdist.linux-x86_64/egg/setuptools/dist.py", line 430, in get_command_class
+  File "/usr/lib/python2.7/distutils/dist.py", line 815, in get_command_class
+    **import** (module_name)
+  File "/usr/lib/python2.7/distutils/command/check.py", line 13, in <module>
+    from docutils.utils import Reporter
+  File "/home/xeraph/virtualenv/v1/local/lib/python2.7/site-packages/docutils/utils/**init**.py", line 20, in <module>
+    import docutils.io
+  File "/home/xeraph/virtualenv/v1/local/lib/python2.7/site-packages/docutils/io.py", line 18, in <module>
+    from docutils.utils.error_reporting import locale_encoding, ErrorString, ErrorOutput
+  File "/home/xeraph/virtualenv/v1/local/lib/python2.7/site-packages/docutils/utils/error_reporting.py", line 47, in <module>
+    locale_encoding = locale.getlocale()[1] or locale.getdefaultlocale()[1]
+  File "/home/xeraph/virtualenv/v1/lib/python2.7/locale.py", line 543, in getdefaultlocale
+    return _parse_localename(localename)
+  File "/home/xeraph/virtualenv/v1/lib/python2.7/locale.py", line 475, in _parse_localename
+    raise ValueError, 'unknown locale: %s' % localename
+ValueError: unknown locale: UTF-8
+
+Any idea?
+hey all -- it looks like we picked up a permissions problem. looking now.
+Can you try the following?
+
+``` bash
+export LC_ALL=en_us.UTF-8
+export LANG=en_us.UTF-8
+bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
+```
+Should be fixed now.
+I'm closing, but feel free to ping/re-open if you spot this again.
+@mmolaro Actually, GCR is built to support public images (like this one), as well as serve more core infrastructure needs ("I want to serve images to other parts of my cluster"). But I'm looking into getting us on dockerhub, too.
+Perhaps [CppSharp](https://github.com/mono/CppSharp) could be of use? As opposed to SWIG?
++1!
+:+1:
+@eleijonmarck maybe we keep this open to provide visibility to the channel? At least until we can get a PR merged to add it here: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/g3doc/resources/index.md#community
+Hey webmaven: as mentioned in our [Contribution doc](https://github.com/tensorflow/tensorflow/blob/master/CONTRIBUTING.md), we don't accept pull requests through github yet.  However, if you don't mind, I will make these edits internally and update the repository on our next upstream push with credit given to you.
+This is not officially supported yet. But if you want to enable Cuda 3.0 locally, here are the additional places to change: 
+
+https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/common_runtime/gpu/gpu_device.cc#L610
+https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/common_runtime/gpu/gpu_device.cc#L629
+Where the smaller GPU device is ignored. 
+
+The official support will eventually come in a different form, where we make sure the fix works on all different computational environment.
+Just now I grabbed the 0.9 github release. No issues [with bazel 0.3.1] whatsoever.
+I have tried the 0.10 RC github release yesterday and it had the same issue(s).
+x64 cuDNN v5 for cuda 7.5: https://www.sendspace.com/file/v142i4
+Is there an ETA for when this will be merged into master?
+This is presumably not affecting everyone. Since a master patch is not forthcoming, what is it about our environments that causes it? Maybe we can fix that.
+Something I noticed that is happening after I applied damienmg's fix is that bazel dies a lot.
+`Error: unexpected EOF from Bazel server.`
+No sure if it's related, restarting does appear to help and it finishes the build.
+@damienmg Now your fix no longer works (can't be applied), something was done to the CROSSTOOL it seems. I'm somewhat confused as to why I'm even getting this error, surely if it was affecting more people something would have been done already, why so few people get this error?
+
+```
+ERROR: /home/ggg/000/tensorflow/tensorflow/core/kernels/BUILD:1531:1: undeclared inclusion(s) in rule '//tensorflow/core/kernels:depth_space_ops_gpu':
+this rule is missing dependency declarations for the following files included by 'tensorflow/core/kernels/spacetodepth_op_gpu.cu.cc':
+  '/usr/local/cuda-7.5/include/cuda_runtime.h'
+  '/usr/local/cuda-7.5/include/host_config.h'
+  '/usr/local/cuda-7.5/include/builtin_types.h'
+  '/usr/local/cuda-7.5/include/device_types.h'
+  '/usr/local/cuda-7.5/include/host_defines.h'
+  '/usr/local/cuda-7.5/include/driver_types.h'
+  '/usr/local/cuda-7.5/include/surface_types.h'
+  '/usr/local/cuda-7.5/include/texture_types.h'
+  '/usr/local/cuda-7.5/include/vector_types.h'
+  '/usr/local/cuda-7.5/include/channel_descriptor.h'
+  '/usr/local/cuda-7.5/include/cuda_runtime_api.h'
+  '/usr/local/cuda-7.5/include/cuda_device_runtime_api.h'
+  '/usr/local/cuda-7.5/include/driver_functions.h'
+  '/usr/local/cuda-7.5/include/vector_functions.h'
+  '/usr/local/cuda-7.5/include/vector_functions.hpp'
+  '/usr/local/cuda-7.5/include/common_functions.h'
+  '/usr/local/cuda-7.5/include/math_functions.h'
+  '/usr/local/cuda-7.5/include/math_functions.hpp'
+  '/usr/local/cuda-7.5/include/math_functions_dbl_ptx3.h'
+  '/usr/local/cuda-7.5/include/math_functions_dbl_ptx3.hpp'
+  '/usr/local/cuda-7.5/include/cuda_surface_types.h'
+  '/usr/local/cuda-7.5/include/cuda_texture_types.h'
+  '/usr/local/cuda-7.5/include/device_functions.h'
+  '/usr/local/cuda-7.5/include/device_functions.hpp'
+  '/usr/local/cuda-7.5/include/device_atomic_functions.h'
+  '/usr/local/cuda-7.5/include/device_atomic_functions.hpp'
+  '/usr/local/cuda-7.5/include/device_double_functions.h'
+  '/usr/local/cuda-7.5/include/device_double_functions.hpp'
+  '/usr/local/cuda-7.5/include/sm_20_atomic_functions.h'
+  '/usr/local/cuda-7.5/include/sm_20_atomic_functions.hpp'
+  '/usr/local/cuda-7.5/include/sm_32_atomic_functions.h'
+  '/usr/local/cuda-7.5/include/sm_32_atomic_functions.hpp'
+  '/usr/local/cuda-7.5/include/sm_35_atomic_functions.h'
+  '/usr/local/cuda-7.5/include/sm_20_intrinsics.h'
+  '/usr/local/cuda-7.5/include/sm_20_intrinsics.hpp'
+  '/usr/local/cuda-7.5/include/sm_30_intrinsics.h'
+  '/usr/local/cuda-7.5/include/sm_30_intrinsics.hpp'
+  '/usr/local/cuda-7.5/include/sm_32_intrinsics.h'
+  '/usr/local/cuda-7.5/include/sm_32_intrinsics.hpp'
+  '/usr/local/cuda-7.5/include/sm_35_intrinsics.h'
+  '/usr/local/cuda-7.5/include/surface_functions.h'
+  '/usr/local/cuda-7.5/include/surface_functions.hpp'
+  '/usr/local/cuda-7.5/include/texture_fetch_functions.h'
+  '/usr/local/cuda-7.5/include/texture_fetch_functions.hpp'
+  '/usr/local/cuda-7.5/include/texture_indirect_functions.h'
+  '/usr/local/cuda-7.5/include/texture_indirect_functions.hpp'
+  '/usr/local/cuda-7.5/include/surface_indirect_functions.h'
+  '/usr/local/cuda-7.5/include/surface_indirect_functions.hpp'
+  '/usr/local/cuda-7.5/include/device_launch_parameters.h'
+  '/usr/local/cuda-7.5/include/cuda_fp16.h'
+  '/usr/local/cuda-7.5/include/math_constants.h'
+  '/usr/local/cuda-7.5/include/curand_kernel.h'
+  '/usr/local/cuda-7.5/include/curand.h'
+  '/usr/local/cuda-7.5/include/curand_discrete.h'
+  '/usr/local/cuda-7.5/include/curand_precalc.h'
+  '/usr/local/cuda-7.5/include/curand_mrg32k3a.h'
+  '/usr/local/cuda-7.5/include/curand_mtgp32_kernel.h'
+  '/usr/local/cuda-7.5/include/cuda.h'
+  '/usr/local/cuda-7.5/include/curand_mtgp32.h'
+  '/usr/local/cuda-7.5/include/curand_philox4x32_x.h'
+  '/usr/local/cuda-7.5/include/curand_globals.h'
+  '/usr/local/cuda-7.5/include/curand_uniform.h'
+  '/usr/local/cuda-7.5/include/curand_normal.h'
+  '/usr/local/cuda-7.5/include/curand_normal_static.h'
+  '/usr/local/cuda-7.5/include/curand_lognormal.h'
+  '/usr/local/cuda-7.5/include/curand_poisson.h'
+  '/usr/local/cuda-7.5/include/curand_discrete2.h'.
+nvcc warning : option '--relaxed-constexpr' has been deprecated and replaced by option '--expt-relaxed-constexpr'.
+nvcc warning : option '--relaxed-constexpr' has been deprecated and replaced by option '--expt-relaxed-constexpr'.
+Target //tensorflow/tools/pip_package:build_pip_package failed to build
+Use --verbose_failures to see the command lines of failed build steps.
+INFO: Elapsed time: 328.853s, Critical Path: 325.40s
+
+```
+@damienmg  "nvcc fatal   : Unknown option 'xc++'"
+
+@davidzchen Specifying 7.5 fixed the problem. Thank you.
+@martinwicke Can you give an example? Thank you very much. I am a freshman to tensorflow.@martinwicke Thank you for your time. How to edit the function `input_fn` below to fix the ValueError: GraphDef cannot be larger than 2GB? Can you give another version of function `input_fn`? Thanks a lot. I am not very clear of how to do this edition with the link https://www.tensorflow.org/how_tos/reading_data/ after trying a lot with a lot of errors.
+```python
+def input_fn(df):
+  """Input builder function."""
+  # Creates a dictionary mapping from each continuous feature column name (k) to
+  # the values of that column stored in a constant Tensor.
+  continuous_cols = {k: tf.constant(df[k].values) for k in CONTINUOUS_COLUMNS}
+  # Creates a dictionary mapping from each categorical feature column name (k)
+  # to the values of that column stored in a tf.SparseTensor.
+  categorical_cols = {k: tf.SparseTensor(
+      indices=[[i, 0] for i in range(df[k].size)],
+      values=df[k].values,
+      shape=[df[k].size, 1])
+                      for k in CATEGORICAL_COLUMNS}
+  # Merges the two dictionaries into one.
+  feature_cols = dict(continuous_cols)
+  feature_cols.update(categorical_cols)
+  # Converts the label column into a constant Tensor.
+  label = tf.constant(df[LABEL_COLUMN].values)
+  # Returns the feature columns and the label.
+  return feature_cols, label
+```Hello sherrym,
+
+I managed to get it to read the checkpoint file, but now its outputting:
+
+W tensorflow/core/util/tensor_slice_reader.cc:95] Could not open /Users/Zanhuang/Desktop/NNP/checkpoint: Data loss: not an sstable (bad magic number): perhaps your file is in a different file format and you need to use a different restore operator?
+
+over and over again for the number of variables in that file.
+
+What seems to be the problem here?
+For Training:
+
+```
+import Input
+import Process
+
+import time
+import numpy as np
+import os
+
+import tensorflow as tf
+from datetime import datetime
+
+FLAGS = tf.app.flags.FLAGS
+
+def train():
+    with tf.Session() as sess:
+        images, labels = Process.inputs()
+
+        forward_propgation_results = Process.forward_propagation(images)
+
+        train_loss, cost = Process.error(forward_propgation_results, labels)
+
+        image_summary_t = tf.image_summary(images.name, images, max_images = 2)
+
+        summary_op = tf.merge_all_summaries()
+
+        init = tf.initialize_all_variables()
+
+        saver = tf.train.Saver()
+
+        sess.run(init)
+
+        saver = tf.train.Saver(tf.all_variables())
+
+        tf.train.start_queue_runners(sess = sess)
+
+        train_dir = "/Users/Zanhuang/Desktop/NNP/model.ckpt"
+
+        summary_writer = tf.train.SummaryWriter(train_dir, sess.graph)
+
+        for step in range(100):
+            start_time = time.time()
+            print(sess.run([train_loss, cost]))
+            duration = time.time() - start_time
+            if step % 1 == 0:
+                num_examples_per_step = FLAGS.batch_size
+                examples_per_sec = num_examples_per_step / duration
+                sec_per_batch = float(duration)
+
+                format_str = ('%s: step %d, (%.1f examples/sec; %.3f ''sec/batch)')
+                print (format_str % (datetime.now(), step, examples_per_sec, sec_per_batch))
+
+                summary_str = sess.run(summary_op)
+                summary_writer.add_summary(summary_str, step)
+
+                if step % 2 == 0:
+                    checkpoint_path = os.path.join(FLAGS.data_dir, 'model.ckpt')
+                    saver.save(sess, checkpoint_path, global_step = step)
+
+
+def main(argv = None):
+    train()
+
+if __name__ == '__main__':
+  tf.app.run()
+```
+
+For Eval:
+
+```
+import main
+import Process
+import Input
+
+eval_dir = "/Users/Zanhuang/Desktop/NNP/checkpoint"
+checkpoint_dir = "/Users/Zanhuang/Desktop/NNP"
+
+
+def evaluate():
+  with tf.Graph().as_default() as g:
+    images, labels = Process.eval_inputs()
+    forward_propgation_results = Process.forward_propagation(images)
+    init_op = tf.initialize_all_variables()
+    saver = tf.train.Saver()
+    top_k_op = tf.nn.in_top_k(forward_propgation_results, labels, 1)
+
+  with tf.Session(graph = g) as sess:
+    tf.train.start_queue_runners(sess = sess)
+    sess.run(init_op)
+    saver.restore(sess, eval_dir)
+    for i in range(100):
+        print(sess.run(top_k_op))
+
+def main(argv = None):
+    evaluate()
+
+if __name__ == '__main__':
+  tf.app.run()
+```
+
+The results of find is:
+
+/Users/Zanhuang/Desktop/NNP/
+/Users/Zanhuang/Desktop/NNP//.DS_Store
+/Users/Zanhuang/Desktop/NNP//checkpoint
+/Users/Zanhuang/Desktop/NNP//DATA_PREPARE
+/Users/Zanhuang/Desktop/NNP//TRAIN_MODI/TEST
+/Users/Zanhuang/Desktop/NNP//TRAIN_MODI/TEST/.DS_Store
+/Users/Zanhuang/Desktop/NNP//TRAIN_MODI/TEST/enput.py
+/Users/Zanhuang/Desktop/NNP//TRAIN_MODI/TEST/Prostate_Cacer_Data1.bin
+/Users/Zanhuang/Desktop/NNP//TRAIN_MODI/TEST/Prostate_Cancer_Data1.bin
+/Users/Zanhuang/Desktop/NNP//TRAIN_MODI/TEST/Prostate_Cancer_Data2.bin
+/Users/Zanhuang/Desktop/NNP//TRAIN_MODI/TEST/Prostate_Cancer_Data3.bin
+/Users/Zanhuang/Desktop/NNP//TRAIN_MODI/TEST/Prostate_Cancer_Data4.bin
+Strange, there is however a model.ckpt folder. I deleted some things from the results because there was a lot of cluttering of jpeg images. I might have accidentally removed something.
+
+Let me repost:
+
+[error.txt](https://github.com/tensorflow/tensorflow/files/421129/error.txt)
+It still doesn't work even after moving the checkpoints out of that directory in to NNP.
+@sherrym 
+I am using this gcc version: x86_64-redhat-linux
+and the libstdc++.so exists in the folder already.
+
+Edit:
+I just noticed that: Today (so  I guess all tmp files from yesterday are removed ) I had to include
+
+> cxx_builtin_include_directory: "/software/gcc/4.9.3/lib/"
+
+otherwise it wouln't come to the error above but crash before with the error: missing dependencies. I am still receiveing the error
+
+Edit:
+the commands from above
+
+`/software/gcc/4.9.3/bin/gcc: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.18, not stripped
+`
+
+`/software/gcc/4.9.3/lib64/
+/software/gcc/4.9.3/lib64/libgcj.la
+/software/gcc/4.9.3/lib64/libquadmath.so.0.0.0
+/software/gcc/4.9.3/lib64/libgcj-tools.so.15
+/software/gcc/4.9.3/lib64/libcilkrts.so.5
+/software/gcc/4.9.3/lib64/libssp.la
+/software/gcc/4.9.3/lib64/libvtv.la
+/software/gcc/4.9.3/lib64/libgfortran.la
+/software/gcc/4.9.3/lib64/libgomp.la
+/software/gcc/4.9.3/lib64/libquadmath.a
+/software/gcc/4.9.3/lib64/libstdc++.a
+/software/gcc/4.9.3/lib64/libasan.la
+/software/gcc/4.9.3/lib64/libssp.so
+/software/gcc/4.9.3/lib64/libstdc++.so.6.0.20-gdb.py
+/software/gcc/4.9.3/lib64/libobjc.a
+/software/gcc/4.9.3/lib64/security
+/software/gcc/4.9.3/lib64/security/classpath.security
+/software/gcc/4.9.3/lib64/libgcj.so
+/software/gcc/4.9.3/lib64/logging.properties
+/software/gcc/4.9.3/lib64/libcilkrts.la
+/software/gcc/4.9.3/lib64/libatomic.a
+/software/gcc/4.9.3/lib64/libstdc++.so.6.0.20
+/software/gcc/4.9.3/lib64/libgij.so.15
+/software/gcc/4.9.3/lib64/libquadmath.so.0
+/software/gcc/4.9.3/lib64/libatomic.la
+/software/gcc/4.9.3/lib64/libssp.a
+/software/gcc/4.9.3/lib64/libgij.la
+/software/gcc/4.9.3/lib64/libgomp.a
+/software/gcc/4.9.3/lib64/libssp_nonshared.la
+/software/gcc/4.9.3/lib64/liblsan.a
+/software/gcc/4.9.3/lib64/libtsan.la
+/software/gcc/4.9.3/lib64/libgfortran.so.3
+/software/gcc/4.9.3/lib64/libvtv.so.0
+/software/gcc/4.9.3/lib64/libgomp.spec
+/software/gcc/4.9.3/lib64/libasan.a
+/software/gcc/4.9.3/lib64/libssp_nonshared.a
+/software/gcc/4.9.3/lib64/libgcc_s.so.1
+/software/gcc/4.9.3/lib64/libvtv.so
+/software/gcc/4.9.3/lib64/libsupc++.a
+/software/gcc/4.9.3/lib64/libstdc++.la
+/software/gcc/4.9.3/lib64/liblsan.so.0.0.0
+/software/gcc/4.9.3/lib64/libitm.a
+/software/gcc/4.9.3/lib64/libtsan.so.0
+/software/gcc/4.9.3/lib64/libobjc.so
+/software/gcc/4.9.3/lib64/libobjc.la
+/software/gcc/4.9.3/lib64/pkgconfig
+/software/gcc/4.9.3/lib64/pkgconfig/libgcj-4.9.pc
+/software/gcc/4.9.3/lib64/libasan.so.1
+/software/gcc/4.9.3/lib64/libatomic.so
+/software/gcc/4.9.3/lib64/libcilkrts.spec
+/software/gcc/4.9.3/lib64/libgcj.so.15.0.0
+/software/gcc/4.9.3/lib64/liblsan.so.0
+/software/gcc/4.9.3/lib64/libstdc++.so.6
+/software/gcc/4.9.3/lib64/libsupc++.la
+/software/gcc/4.9.3/lib64/libvtv.so.0.0.0
+/software/gcc/4.9.3/lib64/libasan.so.1.0.0
+/software/gcc/4.9.3/lib64/libgcj-tools.la
+/software/gcc/4.9.3/lib64/libssp.so.0.0.0
+/software/gcc/4.9.3/lib64/libgij.so
+/software/gcc/4.9.3/lib64/libquadmath.la
+/software/gcc/4.9.3/lib64/libgcj-tools.so.15.0.0
+/software/gcc/4.9.3/lib64/libasan.so
+/software/gcc/4.9.3/lib64/libitm.so.1.0.0
+/software/gcc/4.9.3/lib64/libobjc.so.4
+/software/gcc/4.9.3/lib64/libgomp.so
+/software/gcc/4.9.3/lib64/libitm.la
+/software/gcc/4.9.3/lib64/libgcj_bc.so.1.0.0
+/software/gcc/4.9.3/lib64/libgfortran.spec
+/software/gcc/4.9.3/lib64/libatomic.so.1.1.0
+/software/gcc/4.9.3/lib64/libubsan.so
+/software/gcc/4.9.3/lib64/gcj-4.9.3-15
+/software/gcc/4.9.3/lib64/gcj-4.9.3-15/libgjsmalsa.so
+/software/gcc/4.9.3/lib64/gcj-4.9.3-15/libjavamath.so
+/software/gcc/4.9.3/lib64/gcj-4.9.3-15/classmap.db
+/software/gcc/4.9.3/lib64/gcj-4.9.3-15/libgjsmalsa.la
+/software/gcc/4.9.3/lib64/gcj-4.9.3-15/libjavamath.la
+/software/gcc/4.9.3/lib64/gcj-4.9.3-15/libjvm.la
+/software/gcc/4.9.3/lib64/gcj-4.9.3-15/libjvm.so
+/software/gcc/4.9.3/lib64/libasan_preinit.o
+/software/gcc/4.9.3/lib64/libobjc.so.4.0.0
+/software/gcc/4.9.3/lib64/libgcj-tools.so
+/software/gcc/4.9.3/lib64/libssp.so.0
+/software/gcc/4.9.3/lib64/libcilkrts.a
+/software/gcc/4.9.3/lib64/libubsan.so.0.0.0
+/software/gcc/4.9.3/lib64/libgfortran.so
+/software/gcc/4.9.3/lib64/libgomp.so.1.0.0
+/software/gcc/4.9.3/lib64/libgcc_s.so
+/software/gcc/4.9.3/lib64/libatomic.so.1
+/software/gcc/4.9.3/lib64/libgomp.so.1
+/software/gcc/4.9.3/lib64/libstdc++.so
+/software/gcc/4.9.3/lib64/libgcj_bc.so.1
+/software/gcc/4.9.3/lib64/libgcj.so.15
+/software/gcc/4.9.3/lib64/libquadmath.so
+/software/gcc/4.9.3/lib64/libvtv.a
+/software/gcc/4.9.3/lib64/libtsan.a
+/software/gcc/4.9.3/lib64/libtsan.so
+/software/gcc/4.9.3/lib64/libgfortran.a
+/software/gcc/4.9.3/lib64/libubsan.so.0
+/software/gcc/4.9.3/lib64/libcilkrts.so.5.0.0
+/software/gcc/4.9.3/lib64/liblsan.so
+/software/gcc/4.9.3/lib64/libitm.so
+/software/gcc/4.9.3/lib64/libsanitizer.spec
+/software/gcc/4.9.3/lib64/libcilkrts.so
+/software/gcc/4.9.3/lib64/libgfortran.so.3.0.0
+/software/gcc/4.9.3/lib64/libgij.so.15.0.0
+/software/gcc/4.9.3/lib64/libitm.spec
+/software/gcc/4.9.3/lib64/libitm.so.1
+/software/gcc/4.9.3/lib64/liblsan.la
+/software/gcc/4.9.3/lib64/libubsan.a
+/software/gcc/4.9.3/lib64/libubsan.la
+/software/gcc/4.9.3/lib64/libtsan.so.0.0.0
+/software/gcc/4.9.3/lib64/libgcj_bc.so
+`
+
+Edit: I have compiled bazel myself. Could it be a problem that already bazel is using a wrong version?
+
+Edit: I have avoided the problem by changing to Tensorflow 0.9. There I have other issues but that seems to be resolved?
+No. It's supposed to show the original image but it suddenly turns into
+random pixels randomly scattered.
+
+On Aug 18, 2016 10:09 PM, "Yaroslav Bulatov" notifications@github.com
+wrote:
+
+> weird unrecognizable colors like this? --
+> [image: screen shot 2016-08-18 at 7 06 44 pm]
+> https://cloud.githubusercontent.com/assets/23068/17796639/f67a4eae-6576-11e6-9873-32c849611f0c.png
+> (from
+> #3816 https://github.com/tensorflow/tensorflow/issues/3816 )
+> 
+> —
+> You are receiving this because you authored the thread.
+> Reply to this email directly, view it on GitHub
+> https://github.com/tensorflow/tensorflow/issues/3912#issuecomment-240909275,
+> or mute the thread
+> https://github.com/notifications/unsubscribe-auth/AP-ZENTvNvH-mmmjwN-KtXVDe24_Nejuks5qhRBlgaJpZM4JoEpp
+> .
+Try this:
+
+```
+def lrelu(x, leak=0.2, name="lrelu"):
+     with tf.variable_scope(name):
+         f1 = 0.5 * (1 + leak)
+         f2 = 0.5 * (1 - leak)
+         return f1 * x + f2 * abs(x)
+```
+Is there a way to compute the logdet of a matrix on the  GPU and be able to backprop on it?
+```
+>>> import tensorflow as tf; print tf.__version__
+0.7.1
+```
+Hello everyone,
+I executed the code translate.py from sequence to sequence models tutorial of tensorflow 60 hours ago and still waiting for the output.
+Can anyone tell me how much more time will it take to display the output
+System specifications:
+I installed Ubuntu 16.04 on VMware with a disk space of 100
+![seqop](https://cloud.githubusercontent.com/assets/20130992/22991763/68078e36-f38b-11e6-84ed-f288cfa00087.PNG)
+ GB and RAM of 1 GB.I have same error stated above.
+(Tensorflow is installed from source.)
+In tensorflow/models/embedding/ directory, there is word2vec.py not gen_word2vec.py.
+Command "bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg" requires gen_word2vec.py not word2vec.py.
+I installed latest version of tensorflow by using "git clone https://github.com/tensorflow/tensorflow"
+Error message is like this "error: can't copy 'tensorflow/models/embedding/gen_word2vec.py': doesn't exist or not a regular file".
+How can I solve it?
+Since `/tf_files/..` is an absolute path you probably have to make sure where this tensorflow folder is located and change the code to the following after chaning the directory with `cd` :
+
+`python tf_files/tensorflow/examples/image_retraining/retrain.py --bottleneck_dir=tf_files/bottlenecks --how_many_training_steps 500 --model_dir=tf_files/inception --output_graph=tf_files/retrained_graph.pb --output_labels=tf_files/retrained_labels.txt --image_dir tf_files/images
+`
+How did you tried to revert it back to previous build ?
+Here we have multiple issues !!
+
+Because it's conflicting with YUM package manager and python modules, if possible could you provide cat convolutional.py 
+
+One more doubt have you installed numpy module inside pyhton ?
+Same thing as @marktheunissen. Could it be something with g++ version?
+@marktheunissen - I agree, we could definitely open a separate issue. Also, thing came to my mind, could problem be with version of libjpeg-dev ?
+@marktheunissen - do you mind opening new issue and notifying me here about it? I'll be home in 3-4 hours so I can do it if you're not able to.
+I've solved half of errors by adding 
+`#include <stdio.h>`
+before line:
+`#include <jpeglib.h>`
+
+Now I'm getting:
+
+> tensorflow/contrib/pi_examples/label_image/label_image.cc:319:3: error: ‘vector’ was not declared in this scope
+Just managed to build it successfully with slight code changes. I don't know C++ but I followed errors and fixed it one by one. It seems that this commit broke things: https://github.com/tensorflow/tensorflow/commit/20c02ffe0e6b8af4902487f852e15daa16caa523#diff-48887acc98c15e53f942842ecd65190f
+
+So what I did was:
+
+Open label_image.cc and do this:
+
+Add:
+`#include <stdio.h>`
+before 
+`include <jpeglib.h>`
+
+Find:
+`vector tensorflow::Flag > flag_list = {` around line 320 and change it to:
+`std::vector<tensorflow::Flag> flag_list = {`
+
+Last thing, just couple lines after last change:
+`tensorflow::port::InitMain(usage, &argc, &argv);` change it to:
+`tensorflow::port::InitMain(argv[0], &argc, &argv);`
+
+That's it, now just run:
+`make -f tensorflow/contrib/pi_examples/label_image/Makefile`
+and wait a minute while it finishes, you can then run example by running:
+`tensorflow/contrib/pi_examples/label_image/gen/bin/label_image`
+
+Could anyone help me understand what happened in this diff that broke things and how it got merged to master? Also, I'm not really sure last change is the right thing to do, but it compiles and builds so it is a quickfix for me.
+No problem, It's getting a bit late here so I might send it tomorrow morning. 
+@googlebot I signed it!
+sudo ldconfig /usr/local/cuda/lib64  works for me.By using first convolutional layer as input (conv1/Conv2D) I get an interesting error:
+
+> E tensorflow/examples/label_image/main.cc:306] Running model failed: Invalid argument: Must provide as many biases as the last dimension of the input tensor: [64] vs. [1,32,32,3]
+>          [[Node: conv1/BiasAdd = BiasAdd[T=DT_FLOAT, data_format="NHWC", _device="/job:localhost/replica:0/task:0/cpu:0"](_recv_conv1/Conv2D_0, conv1/biases/read)]]
+
+It is a bit strange to me, I've checked label_image example and it uses convention for image ops [batch_size, img_width, img_height, channels] and Cifar10 example also uses the same. Now, if Cifar10 is training and running properly, why do we get this error here? It doesn't make sense to me. 
+
+Here is code from label_image example that reads image as a tensor:
+
+```
+// Given an image file name, read in the data, try to decode it as an image,
+// resize it to the requested size, and then scale the values as desired.
+Status ReadTensorFromImageFile(string file_name, const int input_height,
+                               const int input_width, const float input_mean,
+                               const float input_std,
+                               std::vector<Tensor>* out_tensors) {
+  auto root = tensorflow::Scope::NewRootScope();
+  using namespace ::tensorflow::ops;  // NOLINT(build/namespaces)
+
+  string input_name = "file_reader";
+  string output_name = "normalized";
+  auto file_reader = ReadFile(root.WithOpName(input_name), file_name);
+  // Now try to figure out what kind of file it is and decode it.
+  const int wanted_channels = 3;
+  Output image_reader;
+  if (tensorflow::StringPiece(file_name).ends_with(".png")) {
+    image_reader = DecodePng(root.WithOpName("png_reader"), file_reader,
+                             DecodePng::Channels(wanted_channels));
+  } else if (tensorflow::StringPiece(file_name).ends_with(".gif")) {
+    image_reader = DecodeGif(root.WithOpName("gif_reader"), file_reader);
+  } else {
+    // Assume if it's neither a PNG nor a GIF then it must be a JPEG.
+    image_reader = DecodeJpeg(root.WithOpName("jpeg_reader"), file_reader,
+                              DecodeJpeg::Channels(wanted_channels));
+  }
+  // Now cast the image data to float so we can do normal math on it.
+  auto float_caster =
+      Cast(root.WithOpName("float_caster"), image_reader, tensorflow::DT_FLOAT);
+  // The convention for image ops in TensorFlow is that all images are expected
+  // to be in batches, so that they're four-dimensional arrays with indices of
+  // [batch, height, width, channel]. Because we only have a single image, we
+  // have to add a batch dimension of 1 to the start with ExpandDims().
+  auto dims_expander = ExpandDims(root, float_caster, 0);
+  // Bilinearly resize the image to fit the required dimensions.
+  auto resized = ResizeBilinear(
+      root, dims_expander,
+      Const(root.WithOpName("size"), {input_height, input_width}));
+  // Subtract the mean and divide by the scale.
+  Div(root.WithOpName(output_name), Sub(root, resized, {input_mean}),
+      {input_std});
+
+  // This runs the GraphDef network definition that we've just constructed, and
+  // returns the results in the output tensor.
+  tensorflow::GraphDef graph;
+  TF_RETURN_IF_ERROR(root.ToGraphDef(&graph));
+
+  std::unique_ptr<tensorflow::Session> session(
+      tensorflow::NewSession(tensorflow::SessionOptions()));
+  TF_RETURN_IF_ERROR(session->Create(graph));
+  TF_RETURN_IF_ERROR(session->Run({}, {output_name}, {}, out_tensors));
+  return Status::OK();
+}
+```
+@sherrym - ok, the thing was that queue returns images in batches of 128 images at a time so CNN expects tensor of shape [batch_size, height, width, channels]. When I changed batch_size to 1 and trained it like that, everything worked fine. I'm wondering still if there is a way to train network with batch_size != 1 and then later freeze graph and reuse it by classifying images 1 by 1? Maybe somehow tell CNN to receive tensors of shape [None, height, width, channels] so when I freeze graph and run it from C++ it will work with only 1 example. My current solution could be to train Cifar10 model with batch_size = 128 and then in C++ create tensor with shape [128, height, width, channels], only first image would be real image and other "images" would be just random numbers, but that seems like waste of processing time and resources.
+@Sraw  am I able to assign specific values for lstm gates? for instance always 1 for input and....Hi agupta74,
+
+can you please specify which API did you use from timeline.py and at when you will hit the issue, as in when this unknown event seen.. can you please provide few more information to have fix@swordspoet i melt same problem,did you solved it? @kaminskypavel  I  rename the file cudnn64_6.dll -> cudnn64_5.dll but it does not work . And i have the error  "ImportError: DLL load failed: 找不到指定的模块。"   @AdaZhangLi 
+
+Thank you! That did it for me!I signed it!@vrv Using different optimizer instances for different variables would lead to the problem of computing the same gradients multiple times and probably some other issues. Might also not work as intended with an optimizer like Adam.
+
+What I'm essentially asking for the is the ability to scale a gradient on a per neuron basis with a mask, or as in the use case of individual layers having their own learning rate, a scalar.
+
+Simple example:
+Some layer contains 5 neurons and you apply this mask: [1 1 2 1 1] to it, when doing backprop the middle neuron gets updated with twice the learning rate. Though in practice the learning rate will just be made 1 and the mask will specify it.
+
+Also it may prove interesting and perhaps even valuable to instead of adjusting the learning rate, actually adjust the gradient itself which would also flow backward - this is not at all obvious how to do in TF.
+@vrv Scaling incoming gradients doesn't work for optimizers that adaptively rescale the gradients. Such as Adam.The main and process portion should contain a workable example. If you download the code, all you need is to provide images in a format similar to CIFAR10 but with 1750 * 1750 images. Before running main.py, you may want to reconfigure the directory names, as they are for my personal PC(I should fix it).
+
+The code can be found here:
+
+https://github.com/StructML/Neural-Network-ProstateHello,
+Which command should I execute with -H option?Hello,
+I did as u said and still got these following errors
+![baze](https://cloud.githubusercontent.com/assets/20130992/23278861/edcc001e-f9e0-11e6-9804-9cae3494ed47.PNG)
+Yes, I did the same way. the command "bazel build --config=opt //tensorflow/tools/pip_package:build_pip_package
+" is executed previously. please see the picture attached
+![b2](https://cloud.githubusercontent.com/assets/20130992/23279448/52b18a2e-f9e3-11e6-9403-7e248c193f11.PNG)
+
+Yes @poxvoculi This is my problem actually
+![baze](https://cloud.githubusercontent.com/assets/20130992/23317098/076a3e9a-fa9b-11e6-9c46-4c7a8c735624.PNG)
+Dear Mr. mrry, you perfectly solved my problem, thank you very very much!I also observed this same behavior with Tensorflow 1.0.1
+
+It was quite confusing when I looked at my graph in Tensorboard. I thought I had defined my graph incorrectly. Turns out my graph was fine, and Tensorboard was just being weird.Hi @Carmezim , I did as you said. It processed for a while and I got the following errors
+![uninstall](https://cloud.githubusercontent.com/assets/20130992/24431763/f609b332-13eb-11e7-8559-32330a3fbae5.PNG)
+I cannot show as I closed that window. I installed it with pip and without GPU. Hi, running the same line again gives the following output. I think tensorflow is uninstalled
+C:\WINDOWS\system32>pip uninstall tensorflow
+Cannot uninstall requirement tensorflow, not installed
+You are using pip version 8.1.1, however version 9.0.1 is available.
+You should consider upgrading via the 'python -m pip install --upgrade pip' command.
+
+I got the same error using anaconda on ubuntu 14.04. I used chmod 777 on the tensorflow env dir and it looked like I had full permissions? Is there some other dirs that I need to chmod? ThxI used the python 3.6 URL as that was the version of python in my tensorflow env in anaconda. Do I need to create an env for py 2.7 and install the 2.7 version of tf instead? TIA I am commenting on this issue.Testing deleted comments with @av8ramit tagged.Closing it is your discretionary power but I think that it is equally a feature request that for such an important bottleneck as input (which is critical for complex training pipelines), a clear and well documented feature for using multiprocessing is available, which is not. The input pipeline is the least explained part of TensorFlow. And moreover, such questions do not receive good attention on StackOverFlow and the present question is just another example of that. Thanks.I too think that there too many movements within the APIs and it is now time that they are stablized.
+
+I got the same error.
+
+import tensorflow as tf
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/home/cloudera/anaconda2/lib/python2.7/site-packages/tensorflow/__init__.py", line 24, in <module>
+    from tensorflow.python import *
+  File "/home/cloudera/anaconda2/lib/python2.7/site-packages/tensorflow/python/__init__.py", line 49, in <module>
+    from tensorflow.python import pywrap_tensorflow
+  File "/home/cloudera/anaconda2/lib/python2.7/site-packages/tensorflow/python/pywrap_tensorflow.py", line 52, in <module>
+    raise ImportError(msg)
+ImportError: Traceback (most recent call last):
+  File "/home/cloudera/anaconda2/lib/python2.7/site-packages/tensorflow/python/pywrap_tensorflow.py", line 41, in <module>
+    from tensorflow.python.pywrap_tensorflow_internal import *
+  File "/home/cloudera/anaconda2/lib/python2.7/site-packages/tensorflow/python/pywrap_tensorflow_internal.py", line 28, in <module>
+    _pywrap_tensorflow_internal = swig_import_helper()
+  File "/home/cloudera/anaconda2/lib/python2.7/site-packages/tensorflow/python/pywrap_tensorflow_internal.py", line 24, in swig_import_helper
+    _mod = imp.load_module('_pywrap_tensorflow_internal', fp, pathname, description)
+ImportError: /lib64/libc.so.6: version `GLIBC_2.14' not found (required by /home/cloudera/anaconda2/lib/python2.7/site-packages/tensorflow/python/_pywrap_tensorflow_internal.so)
+
+
+Failed to load the native TensorFlow runtime.
+
+See https://www.tensorflow.org/install/install_sources#common_installation_problems
+
+for some common reasons and solutions.  Include the entire stack trace
+above this error message when asking for help.
+
+By using `conda update dask`, I solved the problem. (windows10, python 3.5 (w/ Anaconda), tensorflow-gpu 1.2.1)thank you @byronyi Our original network was trained with NCHW using fused batch norm, and non-fused batch norm for NCHW is around 6x slower https://github.com/tensorflow/tensorflow/issues/7551#issuecomment-280421351.Yes, fine tune is done with a batch size of 1 (on each GPU). I am training on a 4x 1080 machine, and fine tuning would take around ~20 hours. Non-fused batch norm does work (gives correct gradients), but it is way too slow and will push the fine tuning time beyond 100 hours. It would be faster to simply retrain the original network in NHWC and fine tune there with non-fused batch norm, which is ironic, considering NCHW is the CuDNN canonic format.Thank you!I signed it!The guilty lines are in tensorflow.bzl:
+
+```
+def _cuda_copts():
+  """Gets the appropriate set of copts for (maybe) CUDA compilation.
+
+    If we're doing CUDA compilation, returns copts for our particular CUDA
+    compiler.  If we're not doing CUDA compilation, returns an empty list.
+
+    """
+  return cuda_default_copts() + select({
+      "//conditions:default": [],
+      "@local_config_cuda//cuda:using_nvcc": ([
+          "-nvcc_options=relaxed-constexpr",
+          "-nvcc_options=ftz=true",
+      ]),
+      "@local_config_cuda//cuda:using_clang": ([
+          "-fcuda-flush-denormals-to-zero",
+      ]),
+  })
+```
+
+The reproduce the behavior it seems like you'd need to build CUDA support using Clang.[This answer](https://stackoverflow.com/a/45644766/825785) at StackOverflow would seem to support that this interference in the configuration between using CUDA and using Clang is the problem.
+
+Bazel fails with an error in exactly the way described by this issue when multiple configurations match in a select with no obvious tie-breakers.
+
+https://docs.bazel.build/versions/master/be/functions.html#select
+
+This would suggest that the problem may lie in configure.py allowing configuration choices which trigger this confusion. `conda create -n <name_of_project> python=3.5 anaconda` to create a virtualenv and then `pip3 install tensorflow-gpu --upgrade --force-reinstall` fixed this issue. Thanks! Version info: 
+
+Python 3.4.5 (default, Nov  9 2016, 16:24:59)
+[GCC 4.8.5 20150623 (Red Hat 4.8.5-11)] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import tensorflow as tf
+>>> tf.__version__
+'1.5.0-dev20171127'
+
+a stripped-down version of our code is below, along with our output when we run it. Essentially what we do is compute how long it takes to multiply matrices of various sizes. for each matrix size we run five trials. The odd thing is that for large matrices (10000 x 10000) the first trial is fast, but subsequent multiplications are very slow (see output below code).
+
+```
+import tensorflow as tf
+import tensorflow.contrib.eager as tfe
+import numpy as np
+import time
+import functools
+
+import random
+import json
+import sys
+
+class BenchmarkBaseClass():
+    # checked
+    def __init__(self):
+        self.n_trials = 5
+        self.eager = eager
+    def generate_data(self):
+        pass
+    def run_computation(self, data):
+        pass
+    def time_computation(self):
+        times = []
+        print("Benchmarking with eager = %s" % eager)
+        for i in range(self.n_trials):
+            np.random.seed(i)
+            random.seed(i)
+            data = self.generate_data()
+            t0 = time.time()
+            with tf.device("/gpu:0"):
+                self.run_computation(data)
+            times.append(time.time() - t0)
+            print('Runtime is: %2.3f' % times[-1])
+        return times
+
+class MatrixMultiplicationBenchmark(BenchmarkBaseClass):
+    # checked
+    def __init__(self, p):
+        self.p = p
+        BenchmarkBaseClass.__init__(self)
+    def generate_data(self):
+        A = np.random.random([self.p, self.p])
+        B = np.random.random([self.p, self.p])
+        if not eager:
+            self.A = tf.placeholder(tf.float32, shape=(self.p, self.p))#tf.constant(A)
+            self.B = tf.placeholder(tf.float32, shape=(self.p, self.p))
+            self.c = tf.matmul(self.A, self.B)#self.a, self.b)
+            init = tf.initialize_all_variables()
+            sess.run(init)
+        return A, B
+    def run_computation(self, matrices):
+        A, B = matrices
+        if eager:
+            m = tf.matmul(A, B)
+        else:
+            m = sess.run(self.c, feed_dict={self.A:A, self.B:B})
+
+def run_all_trials(benchmark_name):
+    if benchmark_name == 'matrix_multiplication':
+        all_param_sets = [{'p':500}, {'p':1000}, {'p':2000}, {'p':5000}, {'p':10000}]
+        class_to_use = MatrixMultiplicationBenchmark
+    else:
+        raise Exception("Invalid benchmark name")
+
+    all_times = []
+    for param_set in all_param_sets:
+        print('Parameters: %s' % param_set)
+        benchmark = class_to_use(**param_set)
+        times = benchmark.time_computation()
+        all_times.append(times)
+
+benchmark_name = sys.argv[1]
+eager = sys.argv[2]
+trial_number = sys.argv[3]
+
+assert eager in ['True', 'False']
+assert benchmark_name in ['matrix_multiplication', 'autoencoder', 'matrix_inversion']
+print("Running benchmark: %s" % benchmark_name)
+eager = (eager == 'True')
+
+if eager:
+    tfe.enable_eager_execution()
+else:
+    sess = tf.Session()
+
+run_all_trials(benchmark_name)
+```
+
+Output: (run with command python3 mwe.py matrix_multiplication True blar)
+
+Running benchmark: matrix_multiplication
+Parameters: {'p': 500}
+Benchmarking with eager = True
+2017-12-12 20:02:33.330365: I tensorflow/core/platform/cpu_feature_guard.cc:137] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 FMA
+2017-12-12 20:02:33.637878: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1062] Found device 0 with properties:
+name: TITAN X (Pascal) major: 6 minor: 1 memoryClockRate(GHz): 1.531
+pciBusID: 0000:81:00.0
+totalMemory: 11.90GiB freeMemory: 11.76GiB
+2017-12-12 20:02:33.637949: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1152] Creating TensorFlow device (/device:GPU:0) -> (device: 0, name: TITAN X (Pascal), pci bus id: 0000:81:00.0, compute capability: 6.1)
+Runtime is: 8.477
+Runtime is: 0.001
+Runtime is: 0.001
+Runtime is: 0.001
+Runtime is: 0.001
+Parameters: {'p': 1000}
+Benchmarking with eager = True
+Runtime is: 0.003
+Runtime is: 0.003
+Runtime is: 0.003
+Runtime is: 0.003
+Runtime is: 0.003
+Parameters: {'p': 2000}
+Benchmarking with eager = True
+Runtime is: 0.009
+Runtime is: 0.009
+Runtime is: 0.008
+Runtime is: 0.008
+Runtime is: 0.008
+Parameters: {'p': 5000}
+Benchmarking with eager = True
+Runtime is: 0.046
+Runtime is: 0.078
+Runtime is: 0.079
+Runtime is: 0.079
+Runtime is: 0.079
+Parameters: {'p': 10000}
+Benchmarking with eager = True
+Runtime is: 0.181
+Runtime is: 2.829
+Runtime is: 2.830
+Runtime is: 2.836
+Runtime is: 2.863Thank you!! Good to know. When we run that code on our GPU, we get quite similar results (pasted below). 
+
+Our initial results still seem a bit odd to me, I guess, since in some cases you may need to get data from the CPU to the GPU, and it's odd that it takes so much longer for eager mode, and it's also odd that it is initially very fast for eager mode but then slows down? 
+
+Results with your code: 
+One warmup run to account for GPU initialization
+2017-12-17 08:27:21.289886: I tensorflow/core/platform/cpu_feature_guard.cc:137] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 FMA
+2017-12-17 08:27:21.720501: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1062] Found device 0 with properties:
+name: TITAN Xp major: 6 minor: 1 memoryClockRate(GHz): 1.582
+pciBusID: 0000:82:00.0
+totalMemory: 11.90GiB freeMemory: 11.74GiB
+2017-12-17 08:27:21.720605: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1152] Creating TensorFlow device (/device:GPU:0) -> (device: 0, name: TITAN Xp, pci bus id: 0000:82:00.0, compute capability: 6.1)
+Size:  (10, 10)
+Runtime is 0.59110
+Runtime is 0.00020
+Runtime is 0.00009
+Runtime is 0.00009
+Runtime is 0.00008
+Size:  (500, 500)
+Runtime is 0.00014
+Runtime is 0.00009
+Runtime is 0.00009
+Runtime is 0.00009
+Runtime is 0.00008
+Size:  (1000, 1000)
+Runtime is 0.00014
+Runtime is 0.00011
+Runtime is 0.00010
+Runtime is 0.00010
+Runtime is 0.00010
+Size:  (2000, 2000)
+Runtime is 0.00010
+Runtime is 0.00009
+Runtime is 0.00009
+Runtime is 0.00009
+Runtime is 0.00009
+Size:  (5000, 5000)
+Runtime is 0.00010
+Runtime is 0.00009
+Runtime is 0.00009
+Runtime is 0.00009
+Runtime is 0.00009
+Size:  (10000, 10000)
+Runtime is 0.00010
+Runtime is 0.00009
+Runtime is 0.00009
+Runtime is 0.00008
+Runtime is 0.00008Nope! I will close it. @tensorflowbutler: This was regarding the build process from sources only. I cannot edit the previous post as I had deleted that account unfortunately.
+
+### System information
+- **Have I written custom code (as opposed to using a stock example script provided in TensorFlow)**: No
+- **OS Platform and Distribution (e.g., Linux Ubuntu 16.04)**: Win 7 64bit
+- **TensorFlow installed from (source or binary)**: source
+- **TensorFlow version (use command below)**: 1.3.1
+- **Python version**: N/A
+- **Bazel version (if compiling from source)**: N/A
+- **GCC/Compiler version (if compiling from source)**: Visual Studio 2015.
+- **CUDA/cuDNN version**: 8.0/7
+- **GPU model and memory**: N/A
+- **Exact command to reproduce**: Cmake-build
+
+I used Cmake-gui with GPU enabled and all other default-set e.g. gRPC enabled, etc.
+ 
+I found that my problem was in the VS project "**pywrap_tensorflow_internal**".  When I was building this particular project, there was a "**pywrap_tensorflow_internal.def**" definition file (which I didn't notice from where it was created) in the 'cmake-build' folder that was being used to generate the DLL file "**pywrap_tensorflow_internal.dll**".  However, it seemed to me that there were these extra (maybe erroneous) function names in the .def file that were actually not present in the intermediate ".lib" file generated by this project. And thus the above unresolved linking errors.
+
+What I later went on doing is the following:
+-  I simply deleted this definition file "**pywrap_tensorflow_internal.def**"  and also removed from the VS project configuration that was originally present as 
+```
+<Link>
+<ModuleDefinitionFile>
+path/tensorflow-1.3.1/tensorflow/contrib/cmake/build/pywrap_tensorflow.def
+</ModuleDefinitionFile>
+</Link>.
+```
+
+(Had I known how this  .def was generated, I would have regenerated it and tested without this manual modification of the project configuration.)
+
+However, after this only, it successfully exported the functions into the final DLL file "**pywrap_tensorflow_internal.dll**". 
+
+  
+  @sirjo66 
+
+Your link leads to wrong url.
+
+```
+Wrong:   [http://www.example.com/](url)
+Correct: [url](http://www.example.com/)
+```
+
+Correct url is: [http://www.cpu-world.com/Compare/426/Intel_Celeron_J3355_vs_Intel_Core_i5_i5-7600.html](http://www.cpu-world.com/Compare/426/Intel_Celeron_J3355_vs_Intel_Core_i5_i5-7600.html)Pete - I had the same issue.  Your binary actually works for me.
+
+When I run my binary, here is the backtrace I get
+
+`#0  0x76a51f70 in __GI_raise (sig=sig@entry=6) at ../nptl/sysdeps/unix/sysv/linux/raise.c:56
+#1  0x76a53324 in __GI_abort () at abort.c:89
+#2  0x76a8d954 in __libc_message (do_abort=<optimized out>, fmt=0x76b43830 "*** Error in '%s': %s: 0x%s ***\n")
+    at ../sysdeps/posix/libc_fatal.c:175
+#3  0x76a93b80 in malloc_printerr (action=1, str=0x76b43cfc "malloc(): memory corruption", ptr=<optimized out>)
+    at malloc.c:4996
+#4  0x76a95cd4 in _int_malloc (av=av@entry=0x76b614d4 <main_arena>, bytes=bytes@entry=280) at malloc.c:3447
+#5  0x76a97e18 in __GI___libc_malloc (bytes=280) at malloc.c:2891
+#6  0x76f13328 in operator new(unsigned int) () from /usr/lib/arm-linux-gnueabihf/libstdc++.so.6
+#7  0x00288078 in tensorflow::{lambda(tensorflow::OpKernelConstruction*)#1}::_FUN ()
+#8  0x0016f6d8 in tensorflow::CreateOpKernel(tensorflow::DeviceType, tensorflow::DeviceBase*, tensorflow::Allocator*, tensorflow::FunctionLibraryRuntime*, tensorflow::NodeDef const&, int, tensorflow::OpKernel**) ()
+#9  0x000fd4d0 in tensorflow::CreateNonCachedKernel(tensorflow::Device*, tensorflow::FunctionLibraryRuntime*, tensorflow::NodeDef const&, int, tensorflow::OpKernel**) ()
+#10 0x001101c0 in tensorflow::FunctionLibraryRuntimeImpl::CreateKernel(tensorflow::NodeDef const&, tensorflow::OpKernel**)
+    ()
+#11 0x00119d94 in std::_Function_handler<tensorflow::Status (tensorflow::NodeDef const&, tensorflow::OpKernel**), tensorflow::DirectSession::GetOrCreateExecutors(tensorflow::thread::ThreadPool*, tensorflow::gtl::ArraySlice<std::string>, tensorflow::gtl::ArraySlice<std::string>, tensorflow::gtl::ArraySlice<std::string>, tensorflow::DirectSession::ExecutorsAndKeys**, tensorflow::DirectSession::RunStateArgs*)::{lambda(tensorflow::NodeDef const&, tensorflow::OpKernel**)#1}>::_M_invoke(std::_Any_data const&, tensorflow::NodeDef const&, tensorflow::OpKernel**) ()
+#12 0x001040b0 in tensorflow::(anonymous namespace)::ExecutorImpl::Initialize() ()
+#13 0x00104708 in tensorflow::NewLocalExecutor(tensorflow::LocalExecutorParams const&, tensorflow::Graph const*, tensorflow::Executor**) ()
+#14 0x0011dc88 in tensorflow::DirectSession::GetOrCreateExecutors(tensorflow::thread::ThreadPool*, tensorflow::gtl::ArraySlice<std::string>, tensorflow::gtl::ArraySlice<std::string>, tensorflow::gtl::ArraySlice<std::string>, tensorflow::DirectSession::ExecutorsAndKeys**, tensorflow::DirectSession::RunStateArgs*) ()
+#15 0x00aa9060 in ?? ()`
+I converted the VGG-16 caffemodel to TensorFlow https://github.com/ry/tensorflow-vgg16 which might be helpful for a generalized script
+@yorkie It looks interesting, I will try it out! However we cannot merge GPL code into TensorFlow.How do you use deconv2d for upsampling?
+Same code was working before the update. Were you not able to repeat the bug with the above?
+@sherrym, haven't dug into this but still experiencing this bug on 97522f0acd53652baa57e42d06557ebb94bf0c4d and also @ffmpbgrnn's suggestion to change `kDefaultTotalBytesLimit` did allow me to not crash
+@jonathanponce it sounds like you have an idea of how to do this, but I saw no reference to tf.constant in the above links. Can you explain? I'm guessing you mean that `graph_def.SerializeToString()` stores constants? I would very much like to store my entire trained model in a serialized graph_def - which seems entirely possible since Google is distributing Inception v3 as a .pb file.
+I hit this bug while trying implement ResNet. I'm working around it by using a 2x2 kernel with all but the top-left zeroed out.
+https://github.com/ry/tensorflow-resnet/blob/2775805c4c4af3a3a082100c36a2b2f77791df4d/convert.py#L119-L122
+@martinwicke I'd like to take a look at fixing it because I'm hitting this still. But I've never hacked on TF before, if you could give a rough outline of what's involved it'd help!
+@vrv I updated the patch - that test seems to work.
+oops- sorry! ok I'll look at this and get back to you
+@vrv Updated pooling tests - it seems to work out of the box. I squashed the changes into one commit. 
+@vrv hangs in the same way 
+@vrv cc 5.0 solved it - thank you
+yep, updated
+> In one case above (R=C=3, S=2, K=1), we have: R' = C' = 2, Pr = Pc = 1 \* 2 + 1 - 3 = 0, so it feels like the padding calculation is wrong for that case, since it's now calculated as '1' even though it's unneeded.
+> 
+> In the case that failed for you: R=C=4, S=2, K=1 we have R'=C'=2, Pr = Pc = 1 \* 2 + 1 - 4 = -1, so we have negative padding. My guess is that you changed the code to avoid tripping the check failure -- if you use std::max(0, calculated_padding), I'm thinking the math will generally work out. What do you think?
+
+Let's consider another case (padding=SAME) where the kernel is bigger than 1x1 and the strides are bigger than the kernel, such that the kernel lays across the boundary of the image.
+
+So take R=C=4, K=2, S=3. R'=C'=2 and 
+
+```
+pad_needed_width = (R' - 1)S + K - R = 1*3 + 2 - 4 = 1
+pad_left =  pad_needed_width / 2 = 0
+pad_right = pad_needed_width - pad_left  = 1
+```
+
+That seems okay, it calculates some 2x2 output matrix. In the case of the tests we'd have `expected == [44, 28, 41, 16]`.
+
+But in Theano with `border_mode='full'` it pads with one on all sides and calculates `expected == [4, 25, 70, 144]`.
+
+Using this patch, TF would calculate:
+
+```
+pad_needed_width = (R' - 1)S + max(S,K) - R = 1*3 + 3 - 4 = 2
+pad_left = pad_needed_width / 2 = 1
+pad_right = pad_needed_width - pad_left  = 1
+```
+
+See the second test here: https://gist.github.com/ry/273e0a8b83e33f891afbe09a6130c72c
+
+I think the way Theano does it seems more centered.
+I'm okay with that. I think the difference is minimal. I made a graphic showing the two cases with  R=C=4, K=2, S=3. The colored areas show the kernel. The first is the algorithm i proposed (and what theano uses, I think) and the other is the "clipping"
+
+![padding](https://cloud.githubusercontent.com/assets/80/14623521/eb35a498-05a0-11e6-81ec-9818f49875d0.png)
+I've updated the patch with the clipping method and another test.
+@RobRomijnders can i ask what you're using 1d conv for?
+@danmane yea sure. I'll check it out tomorrow
+@danmane @peterbraden it looks fine to me as a proof-of-concept... I was able to build an run the test on ubuntu. This might be better as a separate project outside the TF tree? Also I'd have some style nitpicks like in `test/suite.js`.
+Node itself uses a style similar (same?) to Google's JS style... package/standard seems rather non-standard despite its name.
+https://github.com/nodejs/node/blob/395cc885f4eb21c2002dbfe405d31da275699aa8/lib/path.js
+May I make dilated_conv2d the default name (particularly in the documentation) and leave atrous_conv2d as the alias?
+@tobin oops, thanks
+ok
+@abenmao @yangjunpro Experiment code likely won't help me, as I need to interface with our internal systems to test. I will hopefully have some results in a few days.
+
+Regarding the `model_average_device_setter`: Is it possible to share more code with the existing implementation? Or just use the `ps_strategy` and `ps_ops` arguments of the existing?
+
+Regarding the tests in `tensorflow/contrib/model_average/tests/simple`: Can you restructure the tests to use `tensorflow.python.platform.test`? Maybe follow some of this code: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/training/sync_replicas_optimizer_test.py 
+ or https://github.com/tensorflow/tensorflow/blob/master/tensorflow/contrib/opt/python/training/delay_compensated_gradient_descent_test.py 
+
+Regarding the location of this code: Since this is an optimizer, it might make sense to move this to `tensorflow/tensorflow/contrib/opt/python/training`. What do you think?@abenmao @yangjunpro (cc @zhouh) I'm also hitting the MODEL_VARIALBES issue. It seems ModelAverageOptimizer assumes there's not any MODEL_VARIALBES, but that's a bad assumption. For example the batch_norm implementation distributed with TF creates MODEL_VARIALBES: https://github.com/tensorflow/tensorflow/blob/5e5453099ad4a720172b352e8436e961d9d4235e/tensorflow/contrib/layers/python/layers/layers.py#L704
+
+Have you considered using the "slot" mechanism of Optimizer to store local variables?
