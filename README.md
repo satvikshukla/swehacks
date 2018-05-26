@@ -1,7 +1,7 @@
 # SWEHacks
 Team Members: [Tessa Wiedmann](https://github.com/tessawiedmann), Veronica Chang, Yogasai Gazula, Allison Lee, and Satvik Shukla.
 
-We used stats from top 50 github repositories (based on stars, forks, and trends) to get the industry standard for 'good' repositories. Given them, now one can compare any given repositry (the comments on the issues assigned) with that industry standard and get indiciations on how to be a more effective and efficient team.
+We used stats from top 50 Github repositories (based on stars, forks, and trends) to get the industry standard for 'good' repositories. Given them, now anyone can compare any given repository (the comments on the issues assigned) with that industry standard and get indications on how to be a more effective and efficient team.
 
 Let us have coders be better leaders.
 
